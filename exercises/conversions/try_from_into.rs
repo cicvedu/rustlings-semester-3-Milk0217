@@ -27,7 +27,6 @@ enum IntoColorError {
     IntConversion,
 }
 
-// I AM NOT DONE
 
 // Your task is to complete this implementation and return an Ok result of inner
 // type Color. You need to create an implementation for a tuple of three
@@ -36,11 +35,19 @@ enum IntoColorError {
 // Note that the implementation for tuple and array will be checked at compile
 // time, but the slice implementation needs to check the slice length! Also note
 // that correct RGB color values must be integers in the 0..=255 range.
-
+/* 
 // Tuple implementation
 impl TryFrom<(i16, i16, i16)> for Color {
     type Error = IntoColorError;
     fn try_from(tuple: (i16, i16, i16)) -> Result<Self, Self::Error> {
+        let (red, green, blue) = tuple;
+        let red = red.try_into().map_err(|_| IntoColorError::IntConversion)?;
+        let green = green.try_into().map_err(|_| IntoColorError::IntConversion)?;
+        let blue = blue.try_into().map_err(|_| IntoColorError::IntConversion)?;
+        if red > 255 || green > 255 || blue > 255 {
+            return Err(IntoColorError::IntConversion);
+        }
+        Ok(Color{red, green, blue})
     }
 }
 
@@ -48,15 +55,95 @@ impl TryFrom<(i16, i16, i16)> for Color {
 impl TryFrom<[i16; 3]> for Color {
     type Error = IntoColorError;
     fn try_from(arr: [i16; 3]) -> Result<Self, Self::Error> {
+        let [red, green, blue] = arr;
+        let red = red.try_into().map_err(|_| IntoColorError::IntConversion)?;
+        let green = green.try_into().map_err(|_| IntoColorError::IntConversion)?;
+        let blue = blue.try_into().map_err(|_| IntoColorError::IntConversion)?;
+        if red > 255 || green > 255 || blue > 255 {
+            return Err(IntoColorError::IntConversion);
+        }
+        Ok(Color { red, green, blue })
     }
 }
 
+*/
+/*
 // Slice implementation
 impl TryFrom<&[i16]> for Color {
     type Error = IntoColorError;
     fn try_from(slice: &[i16]) -> Result<Self, Self::Error> {
+        if slice.len() != 3 {
+            return Err(IntoColorError::BadLen);
+        }
+        let (red, green, blue) = (slice[0], slice[1], slice[2]);
+        let red = red.try_into().map_err(|_| IntoColorError::IntConversion)?;
+        let green = green.try_into().map_err(|_| IntoColorError::IntConversion)?;
+        let blue = blue.try_into().map_err(|_| IntoColorError::IntConversion)?;
+        if red > 255 || green > 255 || blue > 255 {
+            return Err(IntoColorError::IntConversion);
+        }
+        Ok(Color { red, green, blue })
+    }
+} */
+
+
+// Helper function to try to convert a number to u8
+fn try_convert<T: TryInto<u8>>(value: T) -> Result<u8, IntoColorError> {
+    value.try_into().map_err(|_| IntoColorError::IntConversion)
+}
+
+// Generic Tuple implementation
+impl<T: TryInto<u8>> TryFrom<(T, T, T)> for Color
+where
+    <T as TryInto<u8>>::Error: std::fmt::Debug,
+{
+    type Error = IntoColorError;
+    fn try_from(tuple: (T, T, T)) -> Result<Self, Self::Error> {
+        let (red, green, blue) = tuple;
+        let red = try_convert(red)?;
+        let green = try_convert(green)?;
+        let blue = try_convert(blue)?;
+        Ok(Color { red, green, blue })
     }
 }
+
+// Generic Array implementation
+impl<T: TryInto<u8>> TryFrom<[T; 3]> for Color
+where
+    <T as TryInto<u8>>::Error: std::fmt::Debug,
+{
+    type Error = IntoColorError;
+    fn try_from(arr: [T; 3]) -> Result<Self, Self::Error> {
+        let [red, green, blue] = arr;
+        let red = try_convert(red)?;
+        let green = try_convert(green)?;
+        let blue = try_convert(blue)?;
+        Ok(Color { red, green, blue })
+    }
+}
+
+// Generic Slice implementation
+impl<T> TryFrom<&[T]> for Color
+where
+    T: TryInto<u8> + Copy,
+    <T as TryInto<u8>>::Error: std::fmt::Debug,
+{
+    type Error = IntoColorError;
+    fn try_from(slice: &[T]) -> Result<Self, Self::Error> {
+        if slice.len() != 3 {
+            return Err(IntoColorError::BadLen);
+        }
+        let (red, green, blue) = (slice[0], slice[1], slice[2]);
+        let red = try_convert(red)?;
+        let green = try_convert(green)?;
+        let blue = try_convert(blue)?;
+        if red > 255 || green > 255 || blue > 255 {
+            return Err(IntoColorError::IntConversion);
+        }
+        Ok(Color { red, green, blue })
+    }
+}
+
 
 fn main() {
     // Use the `try_from` function
